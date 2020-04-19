@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e7c6418723982c8253ec150fe1fcb2ca",
+    "content-hash": "18e2e9c9743c3fa434fe08013278995e",
     "packages": [
         {
             "name": "rubix/tensor",
@@ -75,7 +75,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": [],
-    "prefer-stable": false,
+    "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": ">=7.2"
