@@ -20,7 +20,7 @@
 
     "autoload": {
         "psr-4": {
-            "phpw2v\\": "src/"
+            "rich-davis1\\phpw2v\\": "src/"
         }
     }
 
