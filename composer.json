@@ -1,0 +1,24 @@
+{
+	"name": "phpw2v",
+	"type": "library",
+	"description": "A PHP implementation of Word2Vec, a popular word embedding algorithm created by Tomas Mikolov and popularized by Radim Řehůřek & Peter Sojka with the Gensim Python library.",
+	"license": "MIT",
+	"authors":[
+		{
+			"name": "Rich Davis",
+			"email": "rdavis2031@gmail.com",
+			"role": "Lead Engineer"
+		}
+	],
+
+	"require": {
+		"php": ">=7.2",
+		"rubix/tensor": "^2.0.4"
+	},
+    "autoload": {
+        "psr-4": {
+            "phpw2v\\": "src/"
+        }
+    }
+
+}

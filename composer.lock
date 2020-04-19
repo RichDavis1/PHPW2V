@@ -1,0 +1,84 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "75a0b2897980a1626e3754799fd4f9c1",
+    "packages": [
+        {
+            "name": "rubix/tensor",
+            "version": "2.0.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RubixML/Tensor.git",
+                "reference": "6b9d2facf1861ad449b1ca15223fbd250d46fe8b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RubixML/Tensor/zipball/6b9d2facf1861ad449b1ca15223fbd250d46fe8b",
+                "reference": "6b9d2facf1861ad449b1ca15223fbd250d46fe8b",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "2.16.*",
+                "phalcon/zephir": "^0.12.14",
+                "phpbench/phpbench": "0.16.*",
+                "phpstan/phpstan": "0.12.*",
+                "phpstan/phpstan-phpunit": "0.12.*",
+                "phpunit/phpunit": "8.5.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Tensor\\": "src/",
+                    "JAMA\\": "lib/JAMA"
+                },
+                "files": [
+                    "src/constants.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Andrew DalPino",
+                    "email": "me@andrewdalpino.com",
+                    "homepage": "https://andrewdalpino.com",
+                    "role": "Lead Engineer"
+                }
+            ],
+            "description": "Tensor is a library and extension that provides objects for scientific computing in PHP.",
+            "homepage": "https://github.com/RubixML/Tensor",
+            "keywords": [
+                "arithmetic",
+                "computation",
+                "linear-algebra",
+                "math",
+                "matrix",
+                "php",
+                "scientific-computing",
+                "statistics",
+                "tensor",
+                "trigonometry",
+                "vector"
+            ],
+            "time": "2020-04-17T04:55:11+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=7.2"
+    },
+    "platform-dev": []
+}
