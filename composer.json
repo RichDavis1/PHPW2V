@@ -15,6 +15,9 @@
 		"php": ">=7.2",
 		"rubix/tensor": "^2.0.4"
 	},
+
+	"minimum-stability": "dev",
+
     "autoload": {
         "psr-4": {
             "phpw2v\\": "src/"
