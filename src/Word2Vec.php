@@ -687,8 +687,7 @@ class Word2Vec
 		$result = array_slice($result, 0, $top);	
 
 		return $result;
-	}
-	
+	}	
 
     /**
      * Returns the word embedding for a given word.
@@ -729,6 +728,8 @@ class Word2Vec
      *
      */
     public function load($file_path){
+    	$file_path .= '.model';
+
     	if(!file_exists($file_path)){
     		throw new OutOfBoundsException('File path does not exist.');
     	}
