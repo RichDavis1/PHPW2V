@@ -15,7 +15,7 @@ $ composer require rich-davis1/phpw2v
 ## Using PHPW2v
 
 
-### Step 1: Require Vendor autoload and import PHPW2V
+### Step 1: Require Vendor autoload and import PHPW2V at the top of your file
 
 ```
 <?php
@@ -24,6 +24,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 use phpw2v\Word2Vec;
 ```
+
 
 ### Step 2: Prepare an array of sentences
 
@@ -61,6 +62,15 @@ $word2vec->train($sentences);
 $word2vec->save('my_word2vec_model');
 ```
 
+
+### Step 4: Load your previously trained model and find the most similar words 
+```
+$word2vec = new Word2Vec();
+$word2vec = $word2vec->load('my_word2vec_model');
+
+$most_similar = $word2vec->most_similar(['dog']);
+```
+
 Which results in:
 ```
 Array
@@ -78,18 +88,11 @@ Array
 ```
 
 
-### Step 4: Load your previously trained model and find the most similar words 
-```
-$word2vec = new Word2Vec();
-$word2vec = $word2vec->load('my_word2vec_model');
-
-$most_similar = $word2vec->most_similar(['dog']);
-```
-
 ### Step 5: Find similar words with both positive and negative contexts
 ```
 $most_similar = $word2vec->most_similar(['dog'], ['cat']);
 ```
+
 
 ### Step 6: Get the word embedding of a word to be used in other NLP projects
 ```
