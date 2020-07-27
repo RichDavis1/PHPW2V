@@ -9,20 +9,27 @@
 			"email": "rdavis2031@gmail.com",
 			"role": "Lead Engineer"
 		}
-	],
-
-	"require": {
-		"php": ">=7.2",
-		"rubix/tensor": "^2.0.4"
+	],    
+    "require": {
+		"php": ">=7.4",
+		"phpunit/phpunit": "^9.1",
+		"rubix/tensor": "^2.0.4",
+		"phpstan/phpstan": "^0.12.33",
+		"friendsofphp/php-cs-fixer": "^2.16"
 	},
-
-	"minimum-stability": "dev",
-	"prefer-stable": true,
-
     "autoload": {
         "psr-4": {
-            "phpw2v\\": "src/"
+            "PHPW2V\\": "src/"
         }
-    }
-
+	},
+    "autoload-dev": {
+        "psr-4": {
+			"PHPW2V\\": "tests/"
+		}
+	},	
+    "scripts": {
+        "analyze": "phpstan analyse -c phpstan.neon",
+        "test": "phpunit",
+        "fix": "php-cs-fixer fix --config=.php_cs.dist"
+    }           
 }
