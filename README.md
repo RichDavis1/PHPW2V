@@ -68,7 +68,7 @@ $word2vec->save('my_word2vec_model');
 $word2vec = new Word2Vec();
 $word2vec = $word2vec->load('my_word2vec_model');
 
-$most_similar = $word2vec->most_similar(['dog']);
+$most_similar = $word2vec->mostSimilar(['dog']);
 ```
 
 Which results in:
