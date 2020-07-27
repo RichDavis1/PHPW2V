@@ -90,7 +90,7 @@ Array
 
 ### Step 5: Find similar words with both positive and negative contexts
 ```
-$most_similar = $word2vec->most_similar(['dog'], ['cat']);
+$most_similar = $word2vec->mostSimilar(['dog'], ['cat']);
 ```
 
 
