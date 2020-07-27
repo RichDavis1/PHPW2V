@@ -4,7 +4,6 @@ namespace PHPW2V;
 
 use Tensor\Matrix;
 use Tensor\Vector;
-
 use InvalidArgumentException;
 use RuntimeException;
 use OutOfBoundsException;
