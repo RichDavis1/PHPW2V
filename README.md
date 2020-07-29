@@ -68,7 +68,7 @@ $word2vec->save('my_word2vec_model');
 $word2vec = new Word2Vec();
 $word2vec = $word2vec->load('my_word2vec_model');
 
-$most_similar = $word2vec->mostSimilar(['dog']);
+$mostSimilar = $word2vec->mostSimilar(['dog']);
 ```
 
 Which results in:
@@ -90,13 +90,13 @@ Array
 
 ### Step 5: Find similar words with both positive and negative contexts
 ```
-$most_similar = $word2vec->mostSimilar(['dog'], ['cat']);
+$mostSimilar = $word2vec->mostSimilar(['dog'], ['cat']);
 ```
 
 
 ### Step 6: Get the word embedding of a word to be used in other NLP projects
 ```
-$word_embedding = $word2vec->wordVec('dog');
+$wordEmbedding = $word2vec->wordVec('dog');
 ```
 
 
