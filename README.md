@@ -50,14 +50,14 @@ $sentences = [
 ```
 $dimensions     = 100; //vector dimension size
 $sampling       = 'neg'; //accepts neg or hs
-$min_word_count = 1; //minimum word count
+$minWordCount   = 1; //minimum word count
 $alpha          = .05; //the learning rate
 $window         = 2; //window for skip-gram
 $epochs         = 1000; //how many epochs to run
 $subsample      = 0; //the subsampling rate
 
 
-$word2vec = new Word2Vec($dimensions, $sampling, $window, $subsample,  $alpha, $epochs, $min_word_count);
+$word2vec = new Word2Vec($dimensions, $sampling, $window, $subsample,  $alpha, $epochs, $minWordCount);
 $word2vec->train($sentences);
 $word2vec->save('my_word2vec_model');
 ```
