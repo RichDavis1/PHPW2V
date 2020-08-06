@@ -23,6 +23,7 @@ $ composer require rich-davis1/phpw2v
 require __DIR__ . '/vendor/autoload.php';
 
 use PHPW2V\Word2Vec;
+use PHPW2V\SoftmaxApproximators\NegativeSampling;
 ```
 
 
@@ -48,13 +49,13 @@ $sentences = [
 ### Step 3: Train your model & save it for use later
 
 ```
-$dimensions     = 100; //vector dimension size
-$sampling       = 'neg'; //accepts neg or hs
-$minWordCount   = 1; //minimum word count
+$dimensions     = 150; //vector dimension size
+$sampling       = new NegativeSampling; //Softmax Approximator
+$minWordCount   = 2; //minimum word count
 $alpha          = .05; //the learning rate
-$window         = 2; //window for skip-gram
-$epochs         = 1000; //how many epochs to run
-$subsample      = 0; //the subsampling rate
+$window         = 3; //window for skip-gram
+$epochs         = 500; //how many epochs to run
+$subsample      = 0.05; //the subsampling rate
 
 
 $word2vec = new Word2Vec($dimensions, $sampling, $window, $subsample,  $alpha, $epochs, $minWordCount);
@@ -75,15 +76,15 @@ Which results in:
 ```
 Array
 (
-    [fox] => 0.70975123389235
-    [pug] => 0.6864516587575
-    [only] => 0.61312080700673
-    [a] => 0.57297257749209
-    [is] => 0.50647272674305
-    [ran] => 0.39611266149472
-    [yourself] => 0.3389617422606
-    [to] => 0.33127041727032
-    [jogged] => 0.30974688889277
+    [fox] => 0.65303660275952
+    [pug] => 0.63475600376409
+    [you] => 0.63469270773687
+    [cat] => 0.28333476473645
+    [are] => 0.0086017358485732
+    [ran] => -0.016116842526914
+    [the] => -0.068253396295047
+    [runs] => -0.11967150816883
+    [fast] => -0.12999690227979
 )
 ```
 
