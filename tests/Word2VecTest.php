@@ -1,8 +1,9 @@
 <?php
 
 use PHPW2V\Word2Vec;
+use PHPW2V\SoftmaxApproximators\NegativeSampling;
+use PHPW2V\SoftmaxApproximators\HierarchicalSoftmax;
 use PHPUnit\Framework\TestCase;
-use InvalidArgumentException;
 
 /**
  * @group Embedders
@@ -44,8 +45,7 @@ class Word2VecTest extends TestCase
             'the quick dog runs fast'
         ];
 
-        $this->model = new Word2Vec(100, 'neg', 2, 0, .05, 1000, 1);
-
+        $this->model = new Word2Vec(100, new NegativeSampling(), 2, 0, .05, 1000, 1);
         srand(self::RANDOM_SEED);
     }
 
@@ -72,7 +72,7 @@ class Word2VecTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new Word2Vec(0, 'neg', 2);
+        new Word2Vec(0, new NegativeSampling(), 2);
     }
 
     /**
@@ -81,7 +81,7 @@ class Word2VecTest extends TestCase
     public function params() : void
     {
         $expected = [
-            'layer' => 'neg',
+            'layer' => new NegativeSampling(),
             'window' => 2,
             'dimensions' => 100,
             'sample_rate' => 0,
@@ -96,7 +96,7 @@ class Word2VecTest extends TestCase
     /**
      * @test
      */
-    public function trainPredict() : void
+    public function trainPredictNegativeSampling() : void
     {
         $this->model->train($this->sampleDataset);
 
@@ -107,5 +107,41 @@ class Word2VecTest extends TestCase
 
         $score = $mostSimilar['fast'];
         $this->assertGreaterThanOrEqual(.37, $score);
+    }
+
+    /**
+     * @test
+     */
+    public function trainPredictHierarchicalSoftmax() : void
+    {
+        $sentences = [
+            'the fox runs fast',
+            'the cat jogged fast',
+            'the pug ran fast',
+            'the cat runs fast',
+            'the dog ran fast',
+            'the pug runs fast',
+            'the fox ran fast',
+            'dogs are our link to paradise',
+            'pets are humanizing',
+            'a dog is the only thing on earth that loves you more than you love yourself',
+        ];
+
+        $samples = [];
+        foreach ($sentences as $sentence) {
+            $samples[] = [$sentence];
+        }
+
+        $model = new Word2Vec(150, new HierarchicalSoftmax(), 2, .05, .05, 350, 1);
+        $model->train($sentences);
+
+        $this->assertTrue($model->trained());
+
+        $mostSimilar = $model->mostSimilar(['dog']);
+        $this->assertArrayHasKey('fox', $mostSimilar);
+        $this->assertArrayHasKey('pug', $mostSimilar);
+
+        $this->assertGreaterThanOrEqual(.40, $mostSimilar['fox']);
+        $this->assertGreaterThanOrEqual(.40, $mostSimilar['pug']);
     }
 }

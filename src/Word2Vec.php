@@ -2,9 +2,10 @@
 
 namespace PHPW2V;
 
+use PHPW2V\SoftmaxApproximators\SoftmaxApproximator;
+use PHPW2V\SoftmaxApproximators\NegativeSampling;
 use Tensor\Matrix;
 use Tensor\Vector;
-
 use InvalidArgumentException;
 use RuntimeException;
 use OutOfBoundsException;
@@ -39,13 +40,6 @@ class Word2Vec
      * @var float
      */
     protected const MIN_ALPHA = 0.0001;
-
-    /**
-     * The negative sampling exponent.
-     *
-     * @var float
-     */
-    protected const NS_EXPONENT = 0.75;
 
     /**
      * An array of sanitized and exploded sentences.
@@ -111,39 +105,11 @@ class Word2Vec
     protected $vectorsNorm = [];
 
     /**
-     * The cumulative distribution table for negative sampling.
+     * The Softmax approximation sampling algorithm.
      *
-     * @var int[]
+     * @var SoftmaxApproximator
      */
-    protected $cumTable = [];
-
-    /**
-     * The last digit in the cumulative distribution table.
-     *
-     * @var int
-     */
-    protected $endCumDigit;
-
-    /**
-     * The negative labels used in the cumulative distrubtion table.
-     *
-     * @var \Tensor\Vector
-     */
-    protected $negLabels;
-
-    /**
-     * The training method determined by the layer selected.
-     *
-     * @var string
-     */
-    protected $trainMethod;
-
-    /**
-     * The layer of the network, accepts 'neg' or 'hs'.
-     *
-     * @var string
-     */
-    protected $layer;
+    protected $approximation;
 
     /**
      * The window size for the skip-gram model.
@@ -196,7 +162,7 @@ class Word2Vec
     protected $vocabCount;
 
     /**
-     * @param string $layer
+     * @param SoftmaxApproximator|null $approximation
      * @param int $window
      * @param int $dimensions
      * @param float $sampleRate
@@ -207,17 +173,13 @@ class Word2Vec
      */
     public function __construct(
         int $dimensions = 5,
-        string $layer = 'neg',
+        ?SoftmaxApproximator $approximation = null,
         int $window = 2,
         float $sampleRate = 1e-3,
         float $alpha = 0.01,
         int $epochs = 10,
         int $minCount = 2
     ) {
-        if (!in_array($layer, ['neg', 'hs'])) {
-            throw new InvalidArgumentException('Layer must be neg or hs.');
-        }
-
         if ($window > 5) {
             throw new InvalidArgumentException("Window must be between 1 and 5, $window given.");
         }
@@ -242,14 +204,43 @@ class Word2Vec
             throw new InvalidArgumentException("Minimum word count must be greater than 0, $minCount given.");
         }
 
-        $this->layer = $layer;
+        $this->approximation = $approximation ?? new NegativeSampling();
         $this->window = $window;
         $this->dimensions = $dimensions;
         $this->sampleRate = $sampleRate;
         $this->alpha = $alpha;
         $this->epochs = $epochs;
         $this->minCount = $minCount;
-        $this->negLabels = Vector::quick([1, 0]);
+    }
+
+    /**
+     * Return the vocab array.
+     *
+     * @return mixed[]
+     */
+    public function vocab() : array
+    {
+        return $this->vocab;
+    }
+
+    /**
+     * Return the vocab count.
+     *
+     * @return int
+     */
+    public function vocabCount() : int
+    {
+        return $this->vocabCount;
+    }
+
+    /**
+     * Return the index2word array.
+     *
+     * @return int[]
+     */
+    public function index2word() : array
+    {
+        return $this->index2word;
     }
 
     /**
@@ -260,7 +251,7 @@ class Word2Vec
     public function params() : array
     {
         return [
-            'layer' => $this->layer,
+            'layer' => $this->approximation,
             'window' => $this->window,
             'dimensions' => $this->dimensions,
             'sample_rate' => $this->sampleRate,
@@ -268,7 +259,7 @@ class Word2Vec
             'epochs' => $this->epochs,
             'min_count' => $this->minCount,
         ];
-    }    
+    }
 
     /**
      * Has the learner been trained?
@@ -305,6 +296,89 @@ class Word2Vec
 
         $this->generateL2Norm();
         unset($this->error);
+    }
+
+    /**
+     * Return the word embedding for a given word.
+     *
+     * @param string $word
+     * @param bool $useNorm
+     * @return \Tensor\Vector|null $result
+     */
+    public function wordVec(string $word, bool $useNorm = true) : ?Vector
+    {
+        if (!array_key_exists($word, $this->vocab)) {
+            return null;
+        }
+
+        if ($useNorm) {
+            return $this->vectorsNorm[$this->vocab[$word]['index']];
+        }
+
+        return $this->vectors[$this->vocab[$word]['index']];
+    }
+
+    /**
+     * Return the word embedding, or a vector of zeros if empty, for a given word.
+     *
+     * @param string $word
+     * @param bool $useNorm
+     * @return \Tensor\Vector $result
+     */
+    public function embedWord(string $word, bool $useNorm = true) : Vector
+    {
+        $wordEmbedding = $this->wordVec($word);
+
+        if (!$wordEmbedding) {
+            $wordEmbedding = Vector::zeros($this->dimensions);
+        }
+
+        return $wordEmbedding;
+    }
+
+    /**
+     * Serializes and saves the model for future use.
+     *
+     * @param string|null $filePath
+     */
+    public function save($filePath = null) : void
+    {
+        $save = serialize($this);
+        $filePath = $filePath ?? 'w2v_' . microtime(true);
+
+        file_put_contents($filePath . '.model', $save);
+    }
+
+    /**
+     * Loads a previously saved model.
+     *
+     * @param string $filePath
+     * @throws \OutOfBoundsException
+     * @throws \InvalidArgumentException
+     * @throws \RuntimeException
+     * @return \PHPW2V\Word2Vec $Word2Vec
+     */
+    public function load(string $filePath) : Word2Vec
+    {
+        $filePath .= '.model';
+
+        if (!file_exists($filePath)) {
+            throw new OutOfBoundsException('File path does not exist.');
+        }
+
+        $load = file_get_contents($filePath);
+
+        if (!is_string($load)) {
+            throw new InvalidArgumentException('Contents of file could not be determined.');
+        }
+
+        $word2vec = unserialize($load);
+
+        if (!$word2vec instanceof Word2Vec) {
+            throw new RuntimeException('File is an invalid instance of class Word2Vec.');
+        }
+
+        return $word2vec;
     }
 
     /**
@@ -359,89 +433,6 @@ class Word2Vec
     }
 
     /**
-     * Return the word embedding for a given word.
-     *
-     * @param string $word
-     * @param bool $useNorm
-     * @return \Tensor\Vector|null $result
-     */
-    public function wordVec(string $word, bool $useNorm = true) : ?Vector
-    {
-        if (!array_key_exists($word, $this->vocab)) {
-            return null;
-        }
-
-        if ($useNorm) {
-            return $this->vectorsNorm[$this->vocab[$word]['index']];
-        }
-
-        return $this->vectors[$this->vocab[$word]['index']];
-    }
-
-    /**
-     * Return the word embedding, or a vector of zeros if empty, for a given word.
-     *
-     * @param string $word
-     * @param bool $useNorm
-     * @return \Tensor\Vector $result
-     */
-    public function embedWord(string $word, bool $useNorm = true) : Vector
-    {
-        $wordEmbedding = $this->wordVec($word);
-
-        if (!$wordEmbedding) {
-            $wordEmbedding = Vector::zeros($this->dimensions);
-        }
-
-        return $wordEmbedding;
-    }
-
-    /**
-     * Serializes and saves the model for future use.
-     *
-     * @param ?string $filePath
-     */
-    public function save($filePath = null) : void
-    {
-        $save = serialize($this);
-        $filePath = $filePath ?? 'w2v_' . microtime(true);
-
-        file_put_contents($filePath . '.model', $save);
-    }
-
-    /**
-     * Loads a previously saved model.
-     *
-     * @param string $filePath
-     * @throws \OutOfBoundsException
-     * @throws \InvalidArgumentException
-     * @throws \RuntimeException
-     * @return \PHPW2V\Word2Vec $Word2Vec
-     */
-    public function load(string $filePath) : Word2Vec
-    {   
-        $filePath .= '.model';
-
-        if (!file_exists($filePath)) {
-            throw new OutOfBoundsException('File path does not exist.');
-        }
-
-        $load = file_get_contents($filePath);
-
-        if(!is_string($load)){
-            throw new InvalidArgumentException('Contents of file could not be determined.');
-        }
-
-        $word2vec = unserialize($load);
-
-        if (!$word2vec instanceof Word2Vec) {
-            throw new RuntimeException('File is an invalid instance of class Word2Vec.');
-        }
-
-        return $word2vec;
-    }
-
-    /**
      * Scan vocab, prepare vocab, sort vocab, set sampling methods
      *
      * @param string[] $sentences
@@ -454,16 +445,7 @@ class Word2Vec
         $this->prepVocab();
         $this->sortVocab();
 
-        switch ($this->layer) {
-            case 'hs':
-                $this->createBinaryTree();
-                $this->trainMethod = 'trainPairSgHS';
-                break;
-            case 'neg':
-                $this->createCumTable();
-                $this->trainMethod = 'trainPairSgNeg';
-                break;
-        }
+        $this->approximation->structureSampling($this);
     }
 
     /**
@@ -609,97 +591,6 @@ class Word2Vec
     }
 
     /**
-     * Create & set cumulative distribution table for Negative Sampling
-     */
-    protected function createCumTable() : void
-    {
-        $domain = ((2 ** 31) - 1);
-        $trainWordsPow = $cumulative = 0;
-        $cumTable = array_fill(0, $this->vocabCount, 0);
-
-        for ($i = 0; $i < $this->vocabCount; ++$i) {
-            $trainWordsPow += ($this->vocab[$this->index2word[$i]]['count'] ** self::NS_EXPONENT);
-        }
-
-        for ($i = 0; $i < $this->vocabCount; ++$i) {
-            $cumulative += ($this->vocab[$this->index2word[$i]]['count'] ** self::NS_EXPONENT);
-            $cumTable[$i] = (int) round(($cumulative / $trainWordsPow) * $domain);
-        }
-
-        $this->cumTable = $cumTable;
-        $this->endCumDigit = (int) end($cumTable);
-    }
-
-    /**
-     * Create & set binary tree for Hierarchical Softmax Sampling
-     */
-    protected function createBinaryTree() : void
-    {
-        $heap = $this->buildHeap($this->vocab);
-        $maxDepth = 0;
-        $stack = [[$heap[0], [], []]];
-
-        while ($stack) {
-            $stackItem = array_pop($stack);
-
-            if (empty($stackItem)) {
-                break;
-            }
-
-            $points = $stackItem[2];
-            $codes = $stackItem[1];
-            $node = $stackItem[0];
-
-            if ($node['index'] < $this->vocabCount) {
-                $this->vocab[$node['word']]['code'] = Vector::quick($codes);
-                $this->vocab[$node['word']]['point'] = $points;
-
-                $maxDepth = max(count($codes), $maxDepth);
-            } else {
-                $points[] = ($node['index'] - $this->vocabCount);
-                $codeLeft = $codeRight = $codes;
-
-                $codeLeft[] = 0;
-                $codeRight[] = 1;
-
-                $stack[] = [$node['left'], $codeLeft, $points];
-                $stack[] = [$node['right'], $codeRight, $points];
-            }
-        }
-    }
-
-    /**
-     * Build a heap queue, prioritizing each word's respective word count, to initialize the binary tree.
-     * Vocabulary array must include count index and value for each word.
-     *
-     * @param array[] $vocabulary
-     * @return array[] $heap
-     */
-    protected function buildHeap(array $vocabulary) : array
-    {
-        $heap = new Heap($vocabulary);
-        $maxRange = (count($vocabulary) - 2);
-
-        for ($i = 0; $i <= $maxRange; ++$i) {
-            $min1 = $heap->heappop();
-            $min2 = $heap->heappop();
-
-            if (!empty($min1) && !empty($min2)) {
-                $new_item = [
-                    'count' => ($min1['count'] + $min2['count']),
-                    'index' => ($i + (count($vocabulary))),
-                    'left' => $min1,
-                    'right' => $min2
-                ];
-
-                $heap->heappush($new_item);
-            }
-        }
-
-        return $heap->heap();
-    }
-
-    /**
      * Assign random vector for each word in the corpus, instead of creating a massive random matrix for RAM purposes.
      * Create zeroed vectors for syn and error.
      */
@@ -786,66 +677,29 @@ class Word2Vec
         $predictWord = $this->vocab[$wordIndex];
         $l1 = $this->vectors[$contextIndex];
         $lockFactor = $this->vectorsLockf[$contextIndex];
-        $trainMethod = $this->trainMethod;
 
-        $error = $this->$trainMethod($predictWord, $l1);
+        $error = $this->error($predictWord, $l1);
 
         $this->vectors[$contextIndex] = $l1->addVector($error->multiplyScalar($lockFactor));
     }
 
     /**
-     * Calculate the weight of the word sample using hierarchical softmax.
+     * Update vector weights and return error.
      *
      * @param mixed[] $predictWord
      * @param \Tensor\Vector $l1
      * @return \Tensor\Vector
      */
-    protected function trainPairSgHS(array $predictWord, Vector $l1) : Vector
+    protected function error($predictWord, $l1) : Vector
     {
-        $word_indices = $predictWord['point'];
-
-        $l2 = $this->layerMatrix($word_indices);
-        $fa = $this->propagateHidden($l2, $l1);
-        $gb = $fa->addVector($predictWord['code'])->negate()->addScalar(1)->multiplyScalar($this->alpha);
-
-        $this->learnHidden($word_indices, $gb, $l1);
-
-        return $this->error->addMatrix($gb->matmul($l2))->rowAsVector(0);
-    }
-
-    /**
-     * Calculate & return new vector weight of word sample using negative sampling.
-     *
-     * @param array[] $predictWord
-     * @param \Tensor\Vector $l1
-     * @return \Tensor\Vector
-     */
-    protected function trainPairSgNeg(array $predictWord, Vector $l1) : Vector
-    {
-        $wordIndices = [$predictWord['index']];
-
-        while (count($wordIndices) < 1 + 1) {
-            $temp = $this->cumTable;
-            $randInt = rand(0, $this->endCumDigit);
-            $temp[] = $randInt;
-
-            sort($temp);
-            $w = array_search($randInt, $temp);
-
-            if ($w !== $predictWord['index']) {
-                $wordIndices[] = $w;
-            }
-
-            continue;
-        }
-
+        $wordIndices = $this->approximation->wordIndices($predictWord);
         $l2 = $this->layerMatrix($wordIndices);
         $fa = $this->propagateHidden($l2, $l1);
-        $gb = $this->negLabels->subtractVector($fa)->multiplyScalar($this->alpha);
+        $gd = $this->approximation->gradientDescent($fa, $predictWord['word'], $this->alpha);
 
-        $this->learnHidden($wordIndices, $gb, $l1);
+        $this->learnHidden($wordIndices, $gd, $l1);
 
-        return $this->error->addMatrix($gb->matmul($l2))->rowAsVector(0);
+        return $this->error->addMatrix($gd->matmul($l2))->rowAsVector(0);
     }
 
     /**

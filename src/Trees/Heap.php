@@ -1,6 +1,6 @@
 <?php
 
-namespace PHPW2V;
+namespace PHPW2V\Trees;
 
 use InvalidArgumentException;
 
