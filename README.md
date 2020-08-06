@@ -8,7 +8,7 @@ $ composer require rich-davis1/phpw2v
 ```
 
 ### Requirements
-- [PHP](https://php.net/manual/en/install.php) 7.2 or above
+- [PHP](https://php.net/manual/en/install.php) 7.4 or above
 
 
 
@@ -22,14 +22,14 @@ $ composer require rich-davis1/phpw2v
 
 require __DIR__ . '/vendor/autoload.php';
 
-use phpw2v\Word2Vec;
+use PHPW2V\Word2Vec;
 ```
 
 
 ### Step 2: Prepare an array of sentences
 
 ```
-$sentences = array(
+$sentences = [
     'the fox runs fast',
     'the cat jogged fast',
     'the pug ran fast',
@@ -40,7 +40,7 @@ $sentences = array(
     'dogs are our link to paradise',
     'pets are humanizing',
     "a dog is the only thing on earth that loves you more than you love yourself",    
-);
+];
 
 ```
 
@@ -50,14 +50,14 @@ $sentences = array(
 ```
 $dimensions     = 100; //vector dimension size
 $sampling       = 'neg'; //accepts neg or hs
-$min_word_count = 2; //minimum word count
+$minWordCount   = 1; //minimum word count
 $alpha          = .05; //the learning rate
-$window         = 3; //window for skip-gram
-$epochs         = 100; //how many epochs to run
+$window         = 2; //window for skip-gram
+$epochs         = 1000; //how many epochs to run
 $subsample      = 0; //the subsampling rate
 
 
-$word2vec = new Word2Vec($sampling, $window, $dimensions, $subsample,  $alpha, $epochs, $min_word_count);
+$word2vec = new Word2Vec($dimensions, $sampling, $window, $subsample,  $alpha, $epochs, $minWordCount);
 $word2vec->train($sentences);
 $word2vec->save('my_word2vec_model');
 ```
@@ -68,35 +68,35 @@ $word2vec->save('my_word2vec_model');
 $word2vec = new Word2Vec();
 $word2vec = $word2vec->load('my_word2vec_model');
 
-$most_similar = $word2vec->most_similar(['dog']);
+$mostSimilar = $word2vec->mostSimilar(['dog']);
 ```
 
 Which results in:
 ```
 Array
 (
-    [pug] => 0.9122636145201
-    [fox] => 0.91121772783449
-    [cat] => 0.87139391851075
-    [you] => 0.68319173725482
-    [runs] => 0.29705252901269
-    [ran] => 0.28222306054137
-    [are] => -0.044915405981431
-    [fast] => -0.11318860822446
-    [the] => -0.98209420172572
+    [fox] => 0.70975123389235
+    [pug] => 0.6864516587575
+    [only] => 0.61312080700673
+    [a] => 0.57297257749209
+    [is] => 0.50647272674305
+    [ran] => 0.39611266149472
+    [yourself] => 0.3389617422606
+    [to] => 0.33127041727032
+    [jogged] => 0.30974688889277
 )
 ```
 
 
 ### Step 5: Find similar words with both positive and negative contexts
 ```
-$most_similar = $word2vec->most_similar(['dog'], ['cat']);
+$mostSimilar = $word2vec->mostSimilar(['dog'], ['cat']);
 ```
 
 
 ### Step 6: Get the word embedding of a word to be used in other NLP projects
 ```
-$word_embedding = $word2vec->wordVec('dog');
+$wordEmbedding = $word2vec->wordVec('dog');
 ```
 
 
