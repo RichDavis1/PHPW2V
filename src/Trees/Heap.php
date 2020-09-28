@@ -30,14 +30,9 @@ class Heap
 
     /**
      * @param array[] $x
-     * @throws \InvalidArgumentException
      */
     public function __construct(array $x)
     {
-        if (!is_array($x)) {
-            throw new InvalidArgumentException('Heap requires a valid array.');
-        }
-
         $this->heap = $this->heapify($x);
     }
 
